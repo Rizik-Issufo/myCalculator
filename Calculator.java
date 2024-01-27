@@ -2,39 +2,70 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.*;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class Calculator implements ActionListener {
-    JFrame frame;
+public class Calculator extends CalculatorType implements ActionListener {
+    JFrame frame, warningFrame, historicFrame;
+    File file = new File("Calculator.txt");
     JTextField textField;
     JButton[] numberButtons = new JButton[10];
     JButton[] functionButtons = new JButton[9];
     JButton addButton, subButton, multiButton, divButton, negButton;
     JButton decButton, equButton, delButton, clrButton;
-    JPanel panel;
-    String[] types = new String[]{"Normal Calculator", "Scientific Calculator"};
-    JList<String> option = new JList<>(types);
+    JPanel panel, hPanel;
+    private JRadioButton normalCalculator, scientificCalculator;
+    private CalculatorType calculatorType;
     Font myFont = new Font("Console", Font.ITALIC, 25);
-    double num1 = 0, num2 = 0, result = 0;
+    double num1 = 0, num2 = 0.0, result = 0.0;
     char operator;
 
     JTextArea copy = new JTextArea("ROI_Group @ ROITech - 2023");
-
+    JTextArea warningText = new JTextArea("        !! Invalid Operation !!\nYou can't divide a number By 0");
+    JButton warningOKButton = new JButton(" OK ");
+    JButton historicButton = new JButton("Historic");
 
     /**
      * Calculator
      */
     Calculator() {
+        {
+            if (!file.exists()) {
+                try {
+                    boolean b = file.createNewFile();
+                    System.out.println(b);
+                } catch (IOException e) {
+                    System.out.println("Error!!\n" + e.getMessage());
+                }
+            }
+        }
         frame = new JFrame("CALCULATOR 1.0");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(420, 600);
         frame.setLayout(null);
 
-        textField = new JTextField();
+        textField = new JTextField("0");
         textField.setBounds(30, 30, 350, 40);
         textField.setFont(myFont);
         textField.setBackground(Color.lightGray);
+//
+//
+//        String regexText = "([0-9])+\\.([0-9])+";
+//        Pattern pattern = Pattern.compile(regexText);
+//        String text = String.valueOf(textField.getText());
+//        Matcher matcher = pattern.matcher(text);
+//
+//        if (matcher.find()) {
+//         textField.setEditable(true);
+//        }else {
         textField.setEditable(false);
+//        }
+        /**
+         *
+         */
+        textField.addActionListener(this);
 
 
         addButton = new JButton("+");
@@ -69,22 +100,34 @@ public class Calculator implements ActionListener {
             numberButtons[i].setFocusable(false);
         }
 
-        option.setBounds(30, 75, 120, 40);
-        option.setVisibleRowCount(2);
-        option.setBackground(Color.lightGray);
-        option.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+//
+//
+        historicButton.setBounds(292, 80, 86, 25);
+        historicButton.setBackground(Color.LIGHT_GRAY);
+        historicButton.setFont(new Font("Lucida", Font.ITALIC, 15));
 
 //
 //
-        copy.setFont(myFont);
-        copy.setBounds(100, 560, 70, 30);
+        normalCalculator = new JRadioButton();
+        scientificCalculator = new JRadioButton();
+        calculatorType = new CalculatorType();
+        normalCalculator = new JRadioButton("Normal Calculator", true);
+        scientificCalculator = new JRadioButton("Scientific Calculator", false);
+        normalCalculator.setBounds(30, 75, 150, 20);
+        scientificCalculator.setBounds(30, 95, 150, 20);
+
+//
+//
+        copy.setFont(new Font("Console", Font.ITALIC, 10));
+        copy.setBounds(145, 540, 140, 15);
+        copy.setBackground(Color.lightGray);
 
 
         negButton.setBounds(30, 480, 95, 45);
 
 
         delButton.setBounds(140, 480, 120, 45);
-        clrButton.setBounds(270, 480, 110, 45);
+        clrButton.setBounds(272, 480, 108, 45);
 
         panel = new JPanel();
         panel.setBounds(30, 120, 350, 345);
@@ -114,7 +157,17 @@ public class Calculator implements ActionListener {
 
         frame.add(panel);
         frame.add(negButton);
-        frame.add(option);
+//
+//
+        normalCalculator.addItemListener(calculatorType);
+        scientificCalculator.addItemListener(calculatorType);
+//
+        historicButton.addItemListener(this);
+        frame.add(historicButton);
+
+        frame.add(normalCalculator);
+        frame.add(scientificCalculator);
+//        frame.add(option);
         frame.add(copy);
         frame.add(delButton);
         frame.add(clrButton);
@@ -130,13 +183,58 @@ public class Calculator implements ActionListener {
      */
     @Override
     public void actionPerformed(ActionEvent e) {
+
+
+        if (textField.getText().equals("0")) {
+            textField.setText("");
+        }
         for (int i = 0; i < 10; i++) {
             if (e.getSource() == numberButtons[i]) {
                 textField.setText(textField.getText().concat(String.valueOf(i)));
             }
+
         }
+
+        if (e.getSource().equals(historicButton)) {
+
+            frame.setVisible(false);
+            historicFrame = new JFrame("Históric");
+            historicFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            historicFrame.setSize(420, 600);
+            historicFrame.setLayout(null);
+
+            JTextArea title = new JTextArea(" - - - - Históric - - - - ");
+            title.setFont(myFont);
+            title.setBounds(30, 20, 100, 30);
+
+            hPanel = new JPanel();
+            panel.setBounds(30, 120, 350, 345);
+            panel.setLayout(new GridLayout(4, 0, 10, 0));
+            TextArea[] textArea = new TextArea[]{new TextArea()};
+
+            String[] history = readerData();
+
+            for (int i = 1; i == history.length; i++) {
+                if (!(history[i].equals(null))) {
+                    textArea[i].setText(history[i] + "\n");
+                    panel.add(textArea[i]);
+                }
+            }
+
+
+
+            historicFrame.add(panel);
+            historicFrame.add(title);
+            historicFrame.setVisible(true);
+        }
+
         if (e.getSource() == decButton) {
-            textField.setText(textField.getText().concat("."));
+            if (!Objects.equals(textField.getText(), "")) {
+                textField.setText(textField.getText().concat("."));
+            } else {
+                textField.setText(textField.getText().concat("0."));
+
+            }
         }
 
         if (e.getSource() == addButton) {
@@ -156,36 +254,44 @@ public class Calculator implements ActionListener {
             operator = '/';
             textField.setText("");
         }
-//        if (!Objects.equals(textField.getText(), "")) {
         if (e.getSource() == equButton) {
-            num2 = Double.parseDouble(textField.getText());
-
-
+            isZeroOrNot();
+//            if (Objects.equals(textField.getText(), " ") || Objects.equals(textField.getText(), "0") || Objects.equals(textField.getText(), "")) {
+//                num2 = 0;
+//            } else {
+//                num2 = Double.parseDouble(textField.getText());
+//            }
             switch (operator) {
                 case '+':
+                    isZeroOrNot();
                     result = num1 + num2;
                     break;
                 case '-':
+                    isZeroOrNot();
                     result = num1 - num2;
                     break;
                 case '*':
+                    isZeroOrNot();
                     result = num1 * num2;
                     break;
                 case '/':
+                    isZeroOrNot();
                     if (num2 == 0) {
-                        operacaoImpossivel();
-
+                        invalidOperation();
+                        break;
                     } else {
                         result = num1 / num2;
+                        break;
                     }
-                    break;
             }
-
-            textField.setText(String.valueOf(result));
+            isIntegerOrDouble(result, (byte) 1);
+            ////////////////////////////////////////////////////////////////
+            String operation = num1 + " " + operator + " " + num2 + " = " + result;
+            writeData(operation);
+            /////////////////////////////////////////////////////////////////
             num1 = result;
             result = 0;
         }
-//        }
         if (e.getSource() == clrButton) {
             textField.setText("");
             num1 = 0;
@@ -202,16 +308,125 @@ public class Calculator implements ActionListener {
         }
 
         if (e.getSource() == negButton && !Objects.equals(textField.getText(), "")) {
-            double temp = Double.parseDouble(textField.getText());
-            temp *= -1;
-            textField.setText(String.valueOf(temp));
+            double value = Double.parseDouble(textField.getText());
+            //we need to know if the value is null or has a number
+            isIntegerOrDouble(value, (byte) -1);
+        }
+
+        if (e.getSource() == warningOKButton) {
+            warningFrame.setVisible(false);
         }
 
 
     }
 
-    private void operacaoImpossivel() {
-        JOptionPane.showMessageDialog(null, "Operacao inválida !");
+    private void history() {
+//        historicFrame = new JFrame("Históric");
+//        historicFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//        historicFrame.setSize(420, 600);
+//        historicFrame.setLayout(null);
+//
+//        JTextArea title = new JTextArea(" - - - - Históric - - - - ");
+//        title.setFont(myFont);
+//        title.setBounds(30, 20, 100, 30);
+//
+//        hPanel = new JPanel();
+//        panel.setBounds(30, 120, 350, 345);
+//        panel.setLayout(new GridLayout(4, 0, 10, 0));
+//        TextArea[] textArea = new TextArea[]{new TextArea()};
+//
+//        String[] history = readerData();
+//
+//            for (int i = 1; i == history.length; i++) {
+//                if (!(history[i].equals(null))) {
+//                    textArea[i].setText(history[i] + "\n");
+//                    panel.add(textArea[i]);
+//                }
+//            }
+//
+//
+//
+//        warningFrame.add(panel);
+//        warningFrame.add(title);
+//        warningFrame.setVisible(true);
     }
+
+    private void isZeroOrNot() {
+        if (Objects.equals(textField.getText(), " ") || Objects.equals(textField.getText(), "0") || Objects.equals(textField.getText(), "")) {
+            num2 = 0;
+        } else {
+            num2 = Double.parseDouble(textField.getText());
+        }
+    }
+
+    private void isIntegerOrDouble(double result, byte temp) {
+        /*
+         * The var 'regex' will return one or more "numbers" that will end with ".0"
+         * The pattern compile the String 'regex'
+         * It'll be used after typing the "=" sign in the calculator.
+         */
+        String regex = "([0-9])+\\.0$";
+        Pattern pattern = Pattern.compile(regex);
+        /*
+         * <h4> Regex && Matcher <h4/>
+         * This block of code will help you to match the result you
+         * obtained with the pattern.
+         */
+        String text = String.valueOf(result);
+        Matcher matcher = pattern.matcher(text);
+
+        if (matcher.find()) {
+            int res = (int) result * temp;
+            textField.setText(String.valueOf(res));
+        } else {
+            textField.setText(String.valueOf(result * temp));
+        }
+    }
+
+    private void invalidOperation() {
+        warningFrame = new JFrame("!! ERROR !!");
+        warningFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        warningFrame.setSize(400, 300);
+        warningFrame.setLayout(null);
+
+        warningText.setBounds(20, 80, 340, 60);
+        warningText.setFont(new Font("Times New Roman", Font.PLAIN, 10));
+
+        warningOKButton.setBounds(150, 180, 90, 35);
+        warningText.setFont(new Font("Times New Roman", Font.ITALIC, 25));
+        warningOKButton.addActionListener(this);
+
+        warningFrame.add(warningOKButton);
+        warningFrame.add(warningText);
+        warningFrame.setVisible(true);
+    }
+
+    private void writeData(String data) {
+        try (FileWriter fileWriter = new FileWriter(file, true); BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
+            bufferedWriter.write(data);
+            bufferedWriter.newLine();
+            bufferedWriter.flush();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private String[] readerData() {
+        String[] historic = new String[2000];
+        try (FileReader fileReader = new FileReader(file); BufferedReader bufferedReader = new BufferedReader(fileReader)) {
+            String line;
+
+            int i = 1;
+            while ((line = bufferedReader.readLine()) != null) {
+                historic[i] = line;
+                i++;
+            }
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+    return historic;
+    }
+
+
 }
 
