@@ -14,7 +14,7 @@ public class Calculator extends CalculatorType implements ActionListener {
     JButton[] numberButtons = new JButton[10];
     JButton[] functionButtons = new JButton[9];
     JButton addButton, subButton, multiButton, divButton, negButton;
-    JButton decButton, equButton, delButton, clrButton;
+    JButton decButton, equButton, delButton, clrButton, backButton;
     JPanel panel, hPanel;
     private JRadioButton normalCalculator, scientificCalculator;
     private CalculatorType calculatorType;
@@ -25,6 +25,7 @@ public class Calculator extends CalculatorType implements ActionListener {
     JTextArea copy = new JTextArea("ROI_Group @ ROITech - 2023");
     JTextArea warningText = new JTextArea("        !! Invalid Operation !!\nYou can't divide a number By 0");
     JButton warningOKButton = new JButton(" OK ");
+    JTextArea historicTextArea;
     JButton historicButton = new JButton("Historic");
 
     /**
@@ -104,6 +105,7 @@ public class Calculator extends CalculatorType implements ActionListener {
 //
         historicButton.setBounds(292, 80, 86, 25);
         historicButton.setBackground(Color.LIGHT_GRAY);
+        historicButton.setForeground(Color.BLUE);
         historicButton.setFont(new Font("Lucida", Font.ITALIC, 15));
 
 //
@@ -162,7 +164,7 @@ public class Calculator extends CalculatorType implements ActionListener {
         normalCalculator.addItemListener(calculatorType);
         scientificCalculator.addItemListener(calculatorType);
 //
-        historicButton.addItemListener(this);
+        historicButton.addActionListener(this);
         frame.add(historicButton);
 
         frame.add(normalCalculator);
@@ -195,35 +197,48 @@ public class Calculator extends CalculatorType implements ActionListener {
 
         }
 
-        if (e.getSource().equals(historicButton)) {
-
+        if (e.getSource() == historicButton) {
             frame.setVisible(false);
             historicFrame = new JFrame("Históric");
             historicFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             historicFrame.setSize(420, 600);
             historicFrame.setLayout(null);
 
-            JTextArea title = new JTextArea(" - - - - Históric - - - - ");
+            JTextArea title = new JTextArea("                   Históric               ");
             title.setFont(myFont);
-            title.setBounds(30, 20, 100, 30);
+            title.setBounds(20, 20, 360, 35);
 
+            backButton = new JButton(">");
+            backButton.setForeground(Color.GREEN);
+            backButton.setBackground(Color.WHITE);
+            backButton.setBounds(330, 63, 50, 30);
+            backButton.setFont(myFont);
+            backButton.setToolTipText("Back to the Calculator");
+
+            Container container = new Container();
+            JPanel jpPanel = new JPanel ();
+            container.add(jpPanel);
+
+            GridBagLayout gridBagLayout = new GridBagLayout();
+            jpPanel.setLayout(gridBagLayout);
+
+            JList<String> list = new JList<String>();
+            list.setListData(readData());
+
+
+
+
+//            JTextArea history = readData();
             hPanel = new JPanel();
-            panel.setBounds(30, 120, 350, 345);
-            panel.setLayout(new GridLayout(4, 0, 10, 0));
-            TextArea[] textArea = new TextArea[]{new TextArea()};
-
-            String[] history = readerData();
-
-            for (int i = 1; i == history.length; i++) {
-                if (!(history[i].equals(null))) {
-                    textArea[i].setText(history[i] + "\n");
-                    panel.add(textArea[i]);
-                }
-            }
+            hPanel.setBounds(20, 100, 360, 440);
+            hPanel.setBackground(Color.LIGHT_GRAY);
 
 
 
-            historicFrame.add(panel);
+
+            historicFrame.add(backButton);
+//            historicFrame.add(history);
+            historicFrame.add(hPanel);
             historicFrame.add(title);
             historicFrame.setVisible(true);
         }
@@ -320,36 +335,6 @@ public class Calculator extends CalculatorType implements ActionListener {
 
     }
 
-    private void history() {
-//        historicFrame = new JFrame("Históric");
-//        historicFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//        historicFrame.setSize(420, 600);
-//        historicFrame.setLayout(null);
-//
-//        JTextArea title = new JTextArea(" - - - - Históric - - - - ");
-//        title.setFont(myFont);
-//        title.setBounds(30, 20, 100, 30);
-//
-//        hPanel = new JPanel();
-//        panel.setBounds(30, 120, 350, 345);
-//        panel.setLayout(new GridLayout(4, 0, 10, 0));
-//        TextArea[] textArea = new TextArea[]{new TextArea()};
-//
-//        String[] history = readerData();
-//
-//            for (int i = 1; i == history.length; i++) {
-//                if (!(history[i].equals(null))) {
-//                    textArea[i].setText(history[i] + "\n");
-//                    panel.add(textArea[i]);
-//                }
-//            }
-//
-//
-//
-//        warningFrame.add(panel);
-//        warningFrame.add(title);
-//        warningFrame.setVisible(true);
-    }
 
     private void isZeroOrNot() {
         if (Objects.equals(textField.getText(), " ") || Objects.equals(textField.getText(), "0") || Objects.equals(textField.getText(), "")) {
@@ -387,13 +372,17 @@ public class Calculator extends CalculatorType implements ActionListener {
         warningFrame = new JFrame("!! ERROR !!");
         warningFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         warningFrame.setSize(400, 300);
+        warningFrame.setBackground(Color.lightGray);
         warningFrame.setLayout(null);
 
         warningText.setBounds(20, 80, 340, 60);
         warningText.setFont(new Font("Times New Roman", Font.PLAIN, 10));
+        warningText.setBackground(Color.lightGray);
+        warningText.setForeground(Color.red);
 
         warningOKButton.setBounds(150, 180, 90, 35);
         warningText.setFont(new Font("Times New Roman", Font.ITALIC, 25));
+        warningOKButton.setBackground(Color.red);
         warningOKButton.addActionListener(this);
 
         warningFrame.add(warningOKButton);
@@ -411,20 +400,22 @@ public class Calculator extends CalculatorType implements ActionListener {
         }
     }
 
-    private String[] readerData() {
-        String[] historic = new String[2000];
+    private String[] readData() {
+        String [] data = new String[20000];
         try (FileReader fileReader = new FileReader(file); BufferedReader bufferedReader = new BufferedReader(fileReader)) {
             String line;
 
             int i = 1;
-            while ((line = bufferedReader.readLine()) != null) {
-                historic[i] = line;
-                i++;
+            while (( line = bufferedReader.readLine()) != null) {
+                 data[i] = line;
+                 i++;
             }
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
-    return historic;
+//        historicTextArea = new JTextArea(data);
+//        historicTextArea.setLineWrap(true);
+    return data;
     }
 
 
